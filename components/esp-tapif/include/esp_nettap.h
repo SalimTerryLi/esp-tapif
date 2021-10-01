@@ -38,7 +38,7 @@ tap_netif_driver_t esp_tap_create_if_driver(tap_transmit_f fn);
  * @param h pointer to tap interface handle
  *
  */
-void tap_destroy_if_driver(tap_netif_driver_t h);
+void esp_tap_destroy_if_driver(tap_netif_driver_t h);
 
 /**
  * @brief Pass packets from link layer to network layer
