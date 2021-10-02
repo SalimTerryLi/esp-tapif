@@ -1,10 +1,6 @@
-# The following lines of boilerplate have to be in your project's
-# CMakeLists in this exact order for cmake to work correctly
-cmake_minimum_required(VERSION 3.5)
+set(srcs "src/esp_nettap.c" "src/esp_netif_lwip_tap.c" "src/esp_netif_lwip_defaults.c" "src/esp_netif_defaults.c")
+set(include "include")
 
-set(EXTRA_COMPONENT_DIRS
-    "components/esp-tapif"
-)
-
-include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(esp_tapif_example)
+idf_component_register(SRCS ${srcs}
+                    INCLUDE_DIRS ${include}
+                    REQUIRES esp_netif)
