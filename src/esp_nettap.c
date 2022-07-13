@@ -9,6 +9,7 @@
 
 typedef struct tap_interface {
     tap_transmit_f tx_func;
+    tap_free_buffer_f free_func;
 } tap_interface_t;
 
 /**
@@ -27,6 +28,14 @@ static esp_err_t tap_transmit(void *h, void *buffer, size_t len)
     return driver->tap_if.tx_func(buffer, len);
 }
 
+static void tap_l2_free(void *h, void* buffer)
+{
+    tap_netif_driver_t driver = h;
+    if (driver->tap_if.free_func) {
+        driver->tap_if.free_func(buffer);
+    }
+}
+
 static esp_err_t tap_driver_start(esp_netif_t * esp_netif, void * args)
 {
     tap_netif_driver_t driver = args;
@@ -34,13 +43,13 @@ static esp_err_t tap_driver_start(esp_netif_t * esp_netif, void * args)
     esp_netif_driver_ifconfig_t driver_ifconfig = {
             .handle =  driver,
             .transmit = tap_transmit,
-            .driver_free_rx_buffer = NULL
+            .driver_free_rx_buffer = tap_l2_free
     };
 
     return esp_netif_set_driver_config(esp_netif, &driver_ifconfig);
 }
 
-tap_netif_driver_t esp_tap_create_if_driver(tap_transmit_f fn)
+tap_netif_driver_t esp_tap_create_if_driver(tap_transmit_f fn_tx, tap_free_buffer_f fn_free)
 {
     tap_netif_driver_t driver = calloc(1, sizeof(struct tap_netif_driver_s));
     if (driver == NULL) {
@@ -48,7 +57,8 @@ tap_netif_driver_t esp_tap_create_if_driver(tap_transmit_f fn)
         return NULL;
     }
     driver->base.post_attach = tap_driver_start;
-    driver->tap_if.tx_func = fn;
+    driver->tap_if.tx_func = fn_tx;
+    driver->tap_if.free_func = fn_free;
     return driver;
 }
 

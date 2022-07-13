@@ -41,6 +41,7 @@
 #include "lwip/snmp.h"
 #include "lwip/ethip6.h"
 #include "netif/etharp.h"
+#include "netif/esp_pbuf_ref.h"
 #include <string.h>
 #include "esp_netif_lwip_tap.h"
 
@@ -79,11 +80,6 @@ static err_t tap_low_level_output(struct netif *netif, struct pbuf *p)
         LWIP_DEBUGF(PBUF_DEBUG, ("low_level_output: pbuf is a list, application may has bug"));
         q = pbuf_alloc(PBUF_RAW_TX, p->tot_len, PBUF_RAM);
         if (q != NULL) {
-#if ESP_LWIP
-            /* This pbuf RAM was not allocated on layer2, no extra free operation needed in pbuf_free */
-            q->l2_owner = NULL;
-            q->l2_buf = NULL;
-#endif
             pbuf_copy(q, p);
         } else {
             return ERR_MEM;
@@ -111,25 +107,25 @@ static err_t tap_low_level_output(struct netif *netif, struct pbuf *p)
  * @param buffer ethernet buffer
  * @param len length of buffer
  */
-void tapif_input(void *h, void *buffer, size_t len, void *eb)
+void tapif_input(void *h, void *buffer, size_t len, void *l2_buff)
 {
     struct netif *netif = h;
+    esp_netif_t *esp_netif = esp_netif_get_handle_from_netif_impl(netif);
     struct pbuf *p;
 
     if (unlikely(buffer == NULL || !netif_is_up(netif))) {
+        if (buffer) {
+            esp_netif_free_rx_buffer(esp_netif, buffer);
+        }
         return;
     }
 
-    /* acquire new pbuf, type: PBUF_REF */
-    p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
+    /* allocate custom pbuf to hold */
+    p = esp_pbuf_allocate(esp_netif, buffer, len, buffer);
     if (p == NULL) {
+        esp_netif_free_rx_buffer(esp_netif, buffer);
         return;
     }
-    p->payload = buffer;
-#if ESP_LWIP
-    p->l2_owner = netif;
-    p->l2_buf = buffer;
-#endif
     /* full packet send to tcpip_thread to process */
     if (unlikely(netif->input(p, netif) != ERR_OK)) {
         LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
@@ -170,7 +166,6 @@ err_t tapif_init(struct netif *netif)
     netif->output_ip6 = ethip6_output;
 #endif /* LWIP_IPV6 */
     netif->linkoutput = tap_low_level_output;
-    netif->l2_buffer_free_notify = NULL;
     /* set MAC hardware address length */
     netif->hwaddr_len = ETHARP_HWADDR_LEN;
     /* maximum transfer unit */
