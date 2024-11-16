@@ -1,3 +1,3 @@
-version: "0.2.0"
+version: "0.2.1"
 description: ESP_TAPIF - TAP interface implementation for esp-netif
 url: https://github.com/SalimTerryLi/esp-tapif

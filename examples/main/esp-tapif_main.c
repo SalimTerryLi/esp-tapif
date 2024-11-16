@@ -19,6 +19,10 @@ static esp_err_t send_packets(void *buffer, size_t len){
     return ESP_OK;
 }
 
+static esp_err_t free_buffer_cb(void* buffer){
+    return ESP_OK;
+}
+
 /** Event handler for IP_EVENT_ETH_GOT_IP */
 static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
                                  int32_t event_id, void *event_data)
@@ -59,7 +63,7 @@ void app_main(void)
 
     // create tap_if @ ethernet driver layer
     tap_netif_driver_t tapif_drv;
-    tapif_drv = esp_tap_create_if_driver(send_packets);
+    tapif_drv = esp_tap_create_if_driver(send_packets, free_buffer_cb);
     if (tapif_drv == NULL){
         ESP_ERROR_CHECK(ESP_ERR_INVALID_STATE);
     }

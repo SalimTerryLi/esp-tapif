@@ -40,8 +40,8 @@
 #include "lwip/pbuf.h"
 #include "lwip/snmp.h"
 #include "lwip/ethip6.h"
+#include "lwip/esp_pbuf_ref.h"
 #include "netif/etharp.h"
-#include "netif/esp_pbuf_ref.h"
 #include <string.h>
 #include "esp_netif_lwip_tap.h"
 

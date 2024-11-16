@@ -5,7 +5,7 @@
  */
 
 #include "esp_netif.h"
-#include "esp_netif_lwip_internal.h"
+#include "lwip/esp_netif_net_stack.h"
 
 #ifdef CONFIG_ESP_NETIF_TCPIP_LWIP
 
